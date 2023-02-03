@@ -87,8 +87,6 @@ class GoogleCloud(Base):
 
         self.workingfile.write("\t# GoogleCloud IP Count: %d\n" % count)
 
-        print(count)
-
         # Ensure there are conditions to catch
         if count > 0:
             # Add rewrite rule... I think this should help performance

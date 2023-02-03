@@ -75,7 +75,6 @@ class AWS(Base):
                 count += 1
 
         self.workingfile.write("\t# AWS IP Count: %d\n" % count)
-
         # Ensure there are conditions to catch
         if count > 0:
             # Add rewrite rule... I think this should help performance

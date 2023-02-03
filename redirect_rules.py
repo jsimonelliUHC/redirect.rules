@@ -36,8 +36,8 @@ except (ModuleNotFoundError, ImportError) as e:
 __version__ = '1.2.4'
 
 ## Global files
-LOGFILE_NAME     = '/tmp/redirect_logfile'
-WORKINGFILE_NAME = '/tmp/redirect.rules'
+LOGFILE_NAME     = '/home/ubuntu/redirect_logfile'
+WORKINGFILE_NAME = '/etc/apache2/redirect.rules'
 LOGFILE     = open(LOGFILE_NAME, 'w')
 WORKINGFILE = open(WORKINGFILE_NAME, 'w')
 
