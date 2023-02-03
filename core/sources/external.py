@@ -64,7 +64,7 @@ class IPFile(Base):
             # Convert lower-bound CIDRs into /24 by default
             # This is assmuming that if a portion of the net
             # was seen, we want to avoid the full netblock
-            ip = re.sub('\.[0-9]{1,3}/(2[456789]|30)', '.0/24', ip)
+            # ip = re.sub('\.[0-9]{1,3}/(2[456789]|30)', '.0/24', ip)
 
             # Check if the current IP/CIDR has been seen
             if ip not in self.ip_list and ip != '':
