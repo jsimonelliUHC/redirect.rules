@@ -43,8 +43,7 @@ class GoogleCloud(Base):
         self.resolver.nameservers = ['8.8.8.8']
         google_netblocks = self.resolver.query('_cloud-netblocks.googleusercontent.com', 'txt')
         # https://stackoverflow.com/a/11706378
-        google_netblocks = google_netblocks.response.answer[0][-1].strings[0].decode('utf-8')
-
+        google_netblocks = google_netblocks.response.answer[0][0].strings[0].decode('utf-8')
         return google_netblocks
 
 
@@ -67,7 +66,7 @@ class GoogleCloud(Base):
         for netblock in netblocks:
             # Query each GoogleCloud netblock
             netblock_ips = self.resolver.query(netblock, 'txt')
-            netblock_ips = netblock_ips.response.answer[0][-1].strings[0].decode('utf-8')
+            netblock_ips = netblock_ips.response.answer[0][0].strings[0].decode('utf-8')
             # Loop over the Answer for IPv4 CIDRs
             for netblock_ip in netblock_ips.split(' '):
                 if 'ip4' in netblock_ip:
@@ -87,6 +86,8 @@ class GoogleCloud(Base):
                         count += 1
 
         self.workingfile.write("\t# GoogleCloud IP Count: %d\n" % count)
+
+        print(count)
 
         # Ensure there are conditions to catch
         if count > 0:
