@@ -21,6 +21,8 @@ import shutil
 import argparse
 import subprocess
 from datetime import datetime
+import ipaddress
+import copy
 
 # Import modules
 try:
@@ -38,6 +40,7 @@ __version__ = '1.2.4'
 ## Global files
 LOGFILE_NAME     = '/home/ubuntu/redirect_logfile'
 WORKINGFILE_NAME = '/etc/apache2/redirect.rules'
+# WORKINGFILE_NAME = '/home/ubuntu/redirect.rules/redirect.rules'
 LOGFILE     = open(LOGFILE_NAME, 'w')
 WORKINGFILE = open(WORKINGFILE_NAME, 'w')
 
@@ -111,6 +114,7 @@ if __name__ == '__main__':
     parser.add_argument('--hostname-file',  type=str, nargs='+', help='Provide one or more external Hostname files to use as source data.')
     parser.add_argument('--useragent-file', type=str, nargs='+', help='Provide one or more external User-Agent files to use as source data.')
     parser.add_argument('--verbose',        action='store_true', help='Enable verbose output.')
+    parser.add_argument('--our-ips', type=str, help='Prove one external IP files to use as our known IP addresses (allowed through')
     args = parser.parse_args()
 
 
@@ -477,6 +481,63 @@ if __name__ == '__main__':
                 )
                 FULL_IP_LIST = source.process_data()
 
+    if args.our_ips:
+        print(f"[*]\tAdding Our IPs from {args.our_ips}...")
+
+        with open(args.our_ips, 'rt') as readFile:
+            ourIPs = [line.strip() for line in readFile.readlines() if line.strip()]
+
+        time.sleep(.1)
+
+        networks = set()
+        regex = r"^.*'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}.*)'.*$"
+        with open(WORKINGFILE_NAME, 'rt') as readFile:
+            for line in readFile.readlines():
+                line = line.strip()
+                if line:
+                    match = re.findall(regex, line)
+                    if match:
+                        networkString = match[0]
+                        network = ipaddress.IPv4Network(networkString, False)
+                        for ip in ourIPs:
+                            address = ipaddress.IPv4Address(ip)
+                            if address in network:
+                                networks.add(network)
+
+        # Let's build our remove list
+        remove_list = []
+        excludedPrint = '\n\t'.join([str(network) for network in networks])
+        print(f"[*]\tFound the following ranges containing our IP addresses:\n\t{excludedPrint}")
+        for network in networks:
+            networkString = str(network)
+            escapedString = networkString.replace('.', '\\.').replace('/', '\\/')
+            remove_list.append(escapedString)
+
+        for ip in ourIPs:
+            networksCopy = copy.deepcopy(networks)
+            for network in networksCopy:
+                address = ipaddress.IPv4Address(ip)
+                addressNetwork = ipaddress.IPv4Network(ip + "/32")
+                if address in network:
+                    excludedNetworks = network.address_exclude(addressNetwork)
+                    networks.discard(network)
+                    for excludedNetwork in excludedNetworks:
+                        networks.add(excludedNetwork)
+
+        for ip in ourIPs:
+            for network in networks:
+                address = ipaddress.IPv4Address(ip)
+                if address in network:
+                    raise Exception(f"Address {address} found in network {network}")
+
+        WORKINGFILE.write("\n\n\t# Our IPs Excluded\n")
+        for network in networks:
+            WORKINGFILE.write(f"\tRewriteCond				expr					\"-R '{network}'\"\t[OR]\n")
+        WORKINGFILE.write(f"\t# Our IPs Excluded Count: {len(networks)}\n\n")
+
+        WORKINGFILE.write("\t# Add RewriteRule for performance\n")
+        WORKINGFILE.write("\tRewriteCond				expr					\"-R '192.168.250.250'\"\n")
+        WORKINGFILE.write("\tRewriteRule				^.*$					${REDIR_TARGET}	[L,R=302]\n")
 
     #> -----------------------------------------------------------------------------
     # Rule clean up and file finalization
@@ -535,9 +596,6 @@ if __name__ == '__main__':
             tmp_cidr_list[ip[0]].append(int(ip[1]))
         else:
             tmp_ip_list.append(ip)
-
-    # Let's build our remove list
-    remove_list = []
 
     # Add CIDRs to remove
     for net in tmp_cidr_list.keys():
