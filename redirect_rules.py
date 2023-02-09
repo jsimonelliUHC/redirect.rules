@@ -487,22 +487,13 @@ if __name__ == '__main__':
         with open(args.our_ips, 'rt') as readFile:
             ourIPs = [line.strip() for line in readFile.readlines() if line.strip()]
 
-        time.sleep(.1)
-
         networks = set()
-        regex = r"^.*'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}.*)'.*$"
-        with open(WORKINGFILE_NAME, 'rt') as readFile:
-            for line in readFile.readlines():
-                line = line.strip()
-                if line:
-                    match = re.findall(regex, line)
-                    if match:
-                        networkString = match[0]
-                        network = ipaddress.IPv4Network(networkString, False)
-                        for ip in ourIPs:
-                            address = ipaddress.IPv4Address(ip)
-                            if address in network:
-                                networks.add(network)
+        for line in FULL_IP_LIST:
+            network = ipaddress.IPv4Network(line, False)
+            for ip in ourIPs:
+                address = ipaddress.IPv4Address(ip)
+                if address in network:
+                    networks.add(network)
 
         # Let's build our remove list
         remove_list = []
