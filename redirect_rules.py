@@ -480,7 +480,8 @@ if __name__ == '__main__':
                     ]
                 )
                 FULL_IP_LIST = source.process_data()
-
+    remove_list = []
+    
     if args.our_ips:
         print(f"[*]\tAdding Our IPs from {args.our_ips}...")
 
@@ -496,7 +497,6 @@ if __name__ == '__main__':
                     networks.add(network)
 
         # Let's build our remove list
-        remove_list = []
         excludedPrint = '\n\t'.join([str(network) for network in networks])
         print(f"[*]\tFound the following ranges containing our IP addresses:\n\t{excludedPrint}")
         for network in networks:
